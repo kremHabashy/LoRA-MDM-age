@@ -1301,7 +1301,7 @@ class GaussianDiffusion:
 
         # enc = model.model._modules['module']
         enc = model.model
-        mask = model_kwargs['y']['mask']
+
         get_xyz = lambda sample: enc.rot2xyz(sample, mask=None, pose_rep=enc.pose_rep, translation=enc.translation,
                                              glob=enc.glob,
                                              # jointstype='vertices',  # 3.4 iter/sec # USED ALSO IN MotionCLIP
@@ -1359,6 +1359,11 @@ class GaussianDiffusion:
                 ModelMeanType.START_X: x_start,
                 ModelMeanType.EPSILON: noise,
             }[self.model_mean_type]
+
+            mask = model_kwargs['y'].get('mask', None)
+            if mask is None:
+                mask = torch.ones_like(model_output[:, :1, :1, :])  # [B, 1, 1, T]
+
             assert model_output.shape == target.shape == x_start.shape  # [bs, njoints, nfeats, nframes]
 
             terms["rot_mse"] = self.masked_l2(target, model_output, mask) # mean_flat(rot_mse)

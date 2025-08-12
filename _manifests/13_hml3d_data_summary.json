@@ -1,0 +1,971 @@
+{
+  "root": "/u1/khabashy/LoRA-MDM/data/humanml3d",
+  "subjects": {
+    "SUBJ115": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 18,
+      "frames_med": 65.5,
+      "frames_max": 72
+    },
+    "SUBJ54": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 36,
+      "frames_med": 41.0,
+      "frames_max": 52
+    },
+    "SUBJ23": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 21,
+      "frames_med": 61.0,
+      "frames_max": 64
+    },
+    "SUBJ29": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 19,
+      "frames_med": 19.0,
+      "frames_max": 19
+    },
+    "SUBJ127": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 34,
+      "frames_med": 34.0,
+      "frames_max": 34
+    },
+    "SUBJ88": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 30,
+      "frames_med": 56.5,
+      "frames_max": 83
+    },
+    "SUBJ11": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 25,
+      "frames_med": 87.0,
+      "frames_max": 89
+    },
+    "SUBJ66": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 35,
+      "frames_med": 35.0,
+      "frames_max": 35
+    },
+    "SUBJ82": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 17,
+      "frames_med": 46.0,
+      "frames_max": 49
+    },
+    "SUBJ106": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 33,
+      "frames_med": 33.0,
+      "frames_max": 33
+    },
+    "SUBJ47": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 23,
+      "frames_med": 44.5,
+      "frames_max": 66
+    },
+    "SUBJ30": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 23,
+      "frames_med": 39.5,
+      "frames_max": 56
+    },
+    "SUBJ134": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 52,
+      "frames_med": 52.0,
+      "frames_max": 52
+    },
+    "SUBJ08": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 26,
+      "frames_med": 74.5,
+      "frames_max": 80
+    },
+    "SUBJ91": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 22,
+      "frames_med": 60.0,
+      "frames_max": 82
+    },
+    "SUBJ02": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 18,
+      "frames_med": 83.5,
+      "frames_max": 97
+    },
+    "SUBJ75": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 18,
+      "frames_med": 63.5,
+      "frames_max": 69
+    },
+    "SUBJ96": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 24,
+      "frames_med": 54.0,
+      "frames_max": 64
+    },
+    "SUBJ78": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 17,
+      "frames_med": 63.0,
+      "frames_max": 65
+    },
+    "SUBJ72": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 20,
+      "frames_med": 20.0,
+      "frames_max": 20
+    },
+    "SUBJ05": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 23,
+      "frames_med": 103.5,
+      "frames_max": 122
+    },
+    "SUBJ133": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 61,
+      "frames_med": 61.0,
+      "frames_max": 61
+    },
+    "SUBJ37": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 18,
+      "frames_med": 18.0,
+      "frames_max": 18
+    },
+    "SUBJ40": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 18,
+      "frames_med": 53.5,
+      "frames_max": 57
+    },
+    "SUBJ101": {
+      "files": 5,
+      "with_age": 5,
+      "frames_min": 16,
+      "frames_med": 50.0,
+      "frames_max": 64
+    },
+    "SUBJ61": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 19,
+      "frames_med": 33.5,
+      "frames_max": 48
+    },
+    "SUBJ16": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 38,
+      "frames_med": 51.0,
+      "frames_max": 78
+    },
+    "SUBJ85": {
+      "files": 5,
+      "with_age": 5,
+      "frames_min": 24,
+      "frames_med": 56.0,
+      "frames_max": 80
+    },
+    "SUBJ120": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 61,
+      "frames_med": 61.0,
+      "frames_max": 61
+    },
+    "SUBJ24": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 19,
+      "frames_med": 74.5,
+      "frames_max": 82
+    },
+    "SUBJ53": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 20,
+      "frames_med": 43.5,
+      "frames_max": 51
+    },
+    "SUBJ59": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 15,
+      "frames_med": 15.0,
+      "frames_max": 15
+    },
+    "SUBJ112": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 38,
+      "frames_med": 52.0,
+      "frames_max": 59
+    },
+    "SUBJ118": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 51,
+      "frames_med": 56.0,
+      "frames_max": 61
+    },
+    "SUBJ20": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 41,
+      "frames_med": 67.5,
+      "frames_max": 73
+    },
+    "SUBJ57": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 20,
+      "frames_med": 36.0,
+      "frames_max": 52
+    },
+    "SUBJ116": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 32,
+      "frames_med": 70.0,
+      "frames_max": 93
+    },
+    "SUBJ81": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 22,
+      "frames_med": 72.5,
+      "frames_max": 76
+    },
+    "SUBJ18": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 25,
+      "frames_med": 77.0,
+      "frames_max": 88
+    },
+    "SUBJ65": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 23,
+      "frames_med": 46.0,
+      "frames_max": 69
+    },
+    "SUBJ12": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 21,
+      "frames_med": 21.0,
+      "frames_max": 21
+    },
+    "SUBJ124": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 53,
+      "frames_med": 55.0,
+      "frames_max": 57
+    },
+    "SUBJ33": {
+      "files": 5,
+      "with_age": 5,
+      "frames_min": 25,
+      "frames_med": 62.0,
+      "frames_max": 66
+    },
+    "SUBJ44": {
+      "files": 6,
+      "with_age": 6,
+      "frames_min": 23,
+      "frames_med": 60.0,
+      "frames_max": 62
+    },
+    "SUBJ39": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 35,
+      "frames_med": 35.0,
+      "frames_max": 35
+    },
+    "SUBJ105": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 38,
+      "frames_med": 38.0,
+      "frames_max": 38
+    },
+    "SUBJ76": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 22,
+      "frames_med": 57.5,
+      "frames_max": 71
+    },
+    "SUBJ01": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 17,
+      "frames_med": 65.0,
+      "frames_max": 78
+    },
+    "SUBJ98": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 16,
+      "frames_med": 56.0,
+      "frames_max": 65
+    },
+    "SUBJ92": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 17,
+      "frames_med": 17.0,
+      "frames_max": 17
+    },
+    "SUBJ137": {
+      "files": 5,
+      "with_age": 5,
+      "frames_min": 42,
+      "frames_med": 47.0,
+      "frames_max": 61
+    },
+    "SUBJ130": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 48,
+      "frames_med": 54.5,
+      "frames_max": 61
+    },
+    "SUBJ06": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 23,
+      "frames_med": 70.0,
+      "frames_max": 75
+    },
+    "SUBJ71": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 16,
+      "frames_med": 67.5,
+      "frames_max": 71
+    },
+    "SUBJ95": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 21,
+      "frames_med": 21.0,
+      "frames_max": 21
+    },
+    "SUBJ102": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 28,
+      "frames_med": 60.0,
+      "frames_max": 70
+    },
+    "SUBJ108": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 24,
+      "frames_med": 50.0,
+      "frames_max": 51
+    },
+    "SUBJ43": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 20,
+      "frames_med": 45.0,
+      "frames_max": 47
+    },
+    "SUBJ34": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 29,
+      "frames_med": 63.0,
+      "frames_max": 71
+    },
+    "SUBJ49": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 17,
+      "frames_med": 61.5,
+      "frames_max": 67
+    },
+    "SUBJ129": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 61,
+      "frames_med": 61.0,
+      "frames_max": 61
+    },
+    "SUBJ123": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 48,
+      "frames_med": 48.0,
+      "frames_max": 48
+    },
+    "SUBJ68": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 18,
+      "frames_med": 60.5,
+      "frames_max": 71
+    },
+    "SUBJ86": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 17,
+      "frames_med": 54.0,
+      "frames_max": 54
+    },
+    "SUBJ15": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 27,
+      "frames_med": 50.0,
+      "frames_max": 73
+    },
+    "SUBJ62": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 18,
+      "frames_med": 18.0,
+      "frames_max": 18
+    },
+    "SUBJ111": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 23,
+      "frames_med": 53.0,
+      "frames_max": 57
+    },
+    "SUBJ50": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 53,
+      "frames_med": 84.0,
+      "frames_max": 94
+    },
+    "SUBJ27": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 31,
+      "frames_med": 31.0,
+      "frames_max": 31
+    },
+    "SUBJ84": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 19,
+      "frames_med": 52.5,
+      "frames_max": 60
+    },
+    "SUBJ17": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 19,
+      "frames_med": 74.0,
+      "frames_max": 78
+    },
+    "SUBJ60": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 25,
+      "frames_med": 49.0,
+      "frames_max": 56
+    },
+    "SUBJ121": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 52,
+      "frames_med": 52.0,
+      "frames_max": 52
+    },
+    "SUBJ58": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 20,
+      "frames_med": 44.5,
+      "frames_max": 52
+    },
+    "SUBJ52": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 19,
+      "frames_med": 62.0,
+      "frames_max": 75
+    },
+    "SUBJ25": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 17,
+      "frames_med": 42.0,
+      "frames_max": 67
+    },
+    "SUBJ119": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 61,
+      "frames_med": 61.0,
+      "frames_max": 61
+    },
+    "SUBJ113": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 18,
+      "frames_med": 40.5,
+      "frames_max": 63
+    },
+    "SUBJ04": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 22,
+      "frames_med": 67.5,
+      "frames_max": 74
+    },
+    "SUBJ73": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 14,
+      "frames_med": 65.0,
+      "frames_max": 68
+    },
+    "SUBJ97": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 19,
+      "frames_med": 50.5,
+      "frames_max": 53
+    },
+    "SUBJ79": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 24,
+      "frames_med": 58.0,
+      "frames_max": 70
+    },
+    "SUBJ132": {
+      "files": 5,
+      "with_age": 5,
+      "frames_min": 31,
+      "frames_med": 33.0,
+      "frames_max": 56
+    },
+    "SUBJ138": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 52,
+      "frames_med": 52.0,
+      "frames_max": 52
+    },
+    "SUBJ41": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 25,
+      "frames_med": 49.0,
+      "frames_max": 57
+    },
+    "SUBJ36": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 29,
+      "frames_med": 52.5,
+      "frames_max": 76
+    },
+    "SUBJ107": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 21,
+      "frames_med": 58.5,
+      "frames_max": 64
+    },
+    "SUBJ31": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 46,
+      "frames_med": 52.0,
+      "frames_max": 56
+    },
+    "SUBJ46": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 25,
+      "frames_med": 42.0,
+      "frames_max": 52
+    },
+    "SUBJ135": {
+      "files": 5,
+      "with_age": 5,
+      "frames_min": 40,
+      "frames_med": 47.0,
+      "frames_max": 61
+    },
+    "SUBJ74": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 22,
+      "frames_med": 56.0,
+      "frames_max": 60
+    },
+    "SUBJ03": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 21,
+      "frames_med": 61.0,
+      "frames_max": 76
+    },
+    "SUBJ09": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 25,
+      "frames_med": 80.5,
+      "frames_max": 88
+    },
+    "SUBJ90": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 30,
+      "frames_med": 78.0,
+      "frames_max": 94
+    },
+    "SUBJ114": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 20,
+      "frames_med": 20.0,
+      "frames_max": 20
+    },
+    "SUBJ28": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 20,
+      "frames_med": 82.0,
+      "frames_max": 87
+    },
+    "SUBJ22": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 19,
+      "frames_med": 85.0,
+      "frames_max": 86
+    },
+    "SUBJ55": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 29,
+      "frames_med": 60.0,
+      "frames_max": 66
+    },
+    "SUBJ126": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 59,
+      "frames_med": 59.0,
+      "frames_max": 59
+    },
+    "SUBJ83": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 20,
+      "frames_med": 44.0,
+      "frames_max": 68
+    },
+    "SUBJ89": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 54,
+      "frames_med": 54.0,
+      "frames_max": 54
+    },
+    "SUBJ67": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 18,
+      "frames_med": 80.5,
+      "frames_max": 84
+    },
+    "SUBJ10": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 25,
+      "frames_med": 69.0,
+      "frames_max": 72
+    },
+    "SUBJ122": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 34,
+      "frames_med": 47.5,
+      "frames_max": 61
+    },
+    "SUBJ128": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 61,
+      "frames_med": 61.0,
+      "frames_max": 61
+    },
+    "SUBJ63": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 24,
+      "frames_med": 47.0,
+      "frames_max": 55
+    },
+    "SUBJ14": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 20,
+      "frames_med": 55.5,
+      "frames_max": 69
+    },
+    "SUBJ69": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 18,
+      "frames_med": 18.0,
+      "frames_max": 18
+    },
+    "SUBJ87": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 20,
+      "frames_med": 68.5,
+      "frames_max": 77
+    },
+    "SUBJ110": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 100,
+      "frames_med": 100.0,
+      "frames_max": 100
+    },
+    "SUBJ26": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 21,
+      "frames_med": 73.0,
+      "frames_max": 78
+    },
+    "SUBJ51": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 19,
+      "frames_med": 37.5,
+      "frames_max": 56
+    },
+    "SUBJ131": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 61,
+      "frames_med": 61.0,
+      "frames_max": 61
+    },
+    "SUBJ94": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 46,
+      "frames_med": 67.0,
+      "frames_max": 77
+    },
+    "SUBJ70": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 34,
+      "frames_med": 54.0,
+      "frames_max": 69
+    },
+    "SUBJ07": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 25,
+      "frames_med": 50.5,
+      "frames_max": 66
+    },
+    "SUBJ109": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 38,
+      "frames_med": 63.0,
+      "frames_max": 65
+    },
+    "SUBJ103": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 19,
+      "frames_med": 64.5,
+      "frames_max": 80
+    },
+    "SUBJ48": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 18,
+      "frames_med": 18.0,
+      "frames_max": 18
+    },
+    "SUBJ35": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 26,
+      "frames_med": 26.0,
+      "frames_max": 26
+    },
+    "SUBJ42": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 19,
+      "frames_med": 49.0,
+      "frames_max": 79
+    },
+    "SUBJ38": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 21,
+      "frames_med": 39.5,
+      "frames_max": 58
+    },
+    "SUBJ45": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 23,
+      "frames_med": 49.0,
+      "frames_max": 56
+    },
+    "SUBJ32": {
+      "files": 5,
+      "with_age": 5,
+      "frames_min": 24,
+      "frames_med": 67.0,
+      "frames_max": 86
+    },
+    "SUBJ104": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 37,
+      "frames_med": 46.0,
+      "frames_max": 55
+    },
+    "SUBJ93": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 24,
+      "frames_med": 62.0,
+      "frames_max": 69
+    },
+    "SUBJ77": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 15,
+      "frames_med": 56.0,
+      "frames_max": 61
+    },
+    "SUBJ99": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 21,
+      "frames_med": 69.0,
+      "frames_max": 71
+    },
+    "SUBJ136": {
+      "files": 5,
+      "with_age": 5,
+      "frames_min": 31,
+      "frames_med": 40.0,
+      "frames_max": 48
+    },
+    "SUBJ56": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 55,
+      "frames_med": 59.0,
+      "frames_max": 62
+    },
+    "SUBJ21": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 27,
+      "frames_med": 27.0,
+      "frames_max": 27
+    },
+    "SUBJ117": {
+      "files": 2,
+      "with_age": 2,
+      "frames_min": 31,
+      "frames_med": 45.5,
+      "frames_max": 60
+    },
+    "SUBJ13": {
+      "files": 4,
+      "with_age": 4,
+      "frames_min": 26,
+      "frames_med": 88.0,
+      "frames_max": 96
+    },
+    "SUBJ64": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 20,
+      "frames_med": 20.0,
+      "frames_max": 20
+    },
+    "SUBJ80": {
+      "files": 3,
+      "with_age": 3,
+      "frames_min": 15,
+      "frames_med": 42.0,
+      "frames_max": 42
+    },
+    "SUBJ19": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 16,
+      "frames_med": 16.0,
+      "frames_max": 16
+    },
+    "SUBJ125": {
+      "files": 1,
+      "with_age": 1,
+      "frames_min": 61,
+      "frames_med": 61.0,
+      "frames_max": 61
+    }
+  },
+  "totals": {
+    "files": 393,
+    "frames_min": 14,
+    "frames_med": 55.0,
+    "frames_max": 122,
+    "with_age": 393
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "root": "/u1/khabashy/LoRA-MDM",
+  "outdir": "/u1/khabashy/LoRA-MDM/_manifests",
+  "elapsed_sec": 74.38,
+  "artifacts": [
+    "00_repo_sizes.txt",
+    "01_git_status.txt",
+    "01_git_tracked_files.txt",
+    "01_git_untracked_files.txt",
+    "10_code_tree.txt",
+    "11_data_tree_L3.txt",
+    "20_biggest_files.tsv",
+    "30_py_loc.tsv",
+    "40_env_moshpp37.yml",
+    "41_pip_freeze.txt"
+  ]
+}

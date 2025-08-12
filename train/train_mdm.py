@@ -39,15 +39,25 @@ def main():
 
     dist_util.setup_dist(args.device)
     
+    # if args.lora_finetune:
+    #     print("creating style data loader...")
+    #     data = get_dataset_loader(name=args.dataset, batch_size=args.batch_size, num_frames=args.num_frames, styles=tuple(args.styles))
+    #     print("creating prior data loader...", flush=True)
+    #     prior_data = get_prior_dataset_loader(batch_size=args.batch_size, num_frames=args.num_frames)
+    # else:
+    #     print("creating data loader...")
+    #     data = get_dataset_loader(name=args.dataset, batch_size=args.batch_size, num_frames=args.num_frames)
+    #     prior_data = None
     if args.lora_finetune:
         print("creating style data loader...")
         data = get_dataset_loader(name=args.dataset, batch_size=args.batch_size, num_frames=args.num_frames, styles=tuple(args.styles))
-        print("creating prior data loader...", flush=True)
-        prior_data = get_prior_dataset_loader(batch_size=args.batch_size, num_frames=args.num_frames)
-    else:
-        print("creating data loader...")
-        data = get_dataset_loader(name=args.dataset, batch_size=args.batch_size, num_frames=args.num_frames)
-        prior_data = None
+
+        if args.lambda_prior_preserv > 0:
+            print("creating prior data loader...", flush=True)
+            prior_data = get_prior_dataset_loader(batch_size=args.batch_size, num_frames=args.num_frames)
+        else:
+            prior_data = None
+
         
     if args.inpainting_mask != None:
         # for editing application

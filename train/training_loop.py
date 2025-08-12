@@ -205,24 +205,52 @@ class TrainLoop:
 
             if self.args.lora_finetune:
                 print(f'Starting epoch {epoch}')
-                for (motion, cond), (prior_motion, prior_cond) in tqdm(zip(self.data, self.prior_data)):
+                # for (motion, cond), (prior_motion, prior_cond) in tqdm(zip(self.data, self.prior_data)):
+                if self.prior_data is not None:
+                    data_iter = zip(self.data, self.prior_data)
+                else:
+                    data_iter = iter(self.data)
+
+                for i, batch in enumerate(tqdm(data_iter)):
+                    if self.prior_data is not None:
+                        (motion, cond), (prior_motion, prior_cond) = batch
+                    else:
+                        motion, cond = batch
+                        prior_motion, prior_cond = None, None
+
                     if not (not self.lr_anneal_steps or self.total_step() < self.lr_anneal_steps):
                         break
                     
-                    if len(motion) < len(prior_motion):
+                    # if len(motion) < len(prior_motion):
+                    if prior_motion is not None and len(motion) < len(prior_motion):
+                        motion = torch.cat([motion, motion[-1:].repeat(len(prior_motion)-len(motion), 1, 1)], dim=0)
+
                         n = len(motion)
                         prior_motion = prior_motion[:n]
                         prior_cond['y']['text'] = prior_cond['y']['text'][:n]
                         prior_cond['y']['mask'] = prior_cond['y']['mask'][:n]
                         
-                    cond['y']['x_pr_start'] = prior_motion
-                    cond['y']['x_pr_text'] = prior_cond['y']['text']
-                    cond['y']['x_pr_mask'] = prior_cond['y']['mask']
+                    if cond and prior_motion is not None and prior_cond is not None:
+                        for c, p in zip(cond, prior_cond):
+                            c['y']['x_pr_start'] = prior_motion
+                            c['y']['x_pr_text'] = p['y']['text']
+                            c['y']['x_pr_mask'] = p['y']['mask']
                     
                     motion = motion.to(self.device)
-                    cond['y'] = {key: val.to(self.device) if torch.is_tensor(val) else val for key, val in cond['y'].items()}
+                    # cond['y'] = {key: val.to(self.device) if torch.is_tensor(val) else val for key, val in cond['y'].items()}
+                    for c in cond:
+                        c['y'] = {key: val.to(self.device) if torch.is_tensor(val) else val for key, val in c['y'].items()}
 
-                    self.run_step(motion, cond)
+                    # self.run_step(motion, cond)
+                    merged_cond = {'y': {}}
+                    for key in cond[0]['y']:
+                        values = [c['y'][key] for c in cond if key in c['y']]
+                        if values and isinstance(values[0], torch.Tensor):
+                            merged_cond['y'][key] = torch.stack(values)
+
+                    self.run_step(motion, merged_cond)
+
+                    
                     if self.total_step() % self.log_interval == 0:
                         for k,v in logger.get_current().dumpkvs().items():
                             if k == 'loss':

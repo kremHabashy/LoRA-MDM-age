@@ -755,9 +755,9 @@ class HumanML3D(data.Dataset):
         self.mean = np.load(pjoin(opt.data_root, 'Mean.npy'))
         self.std = np.load(pjoin(opt.data_root, 'Std.npy'))
 
-        self.t2m_mean = np.load(pjoin('t2m/Comp_v6_KLD01/meta', f'mean.npy'))
-        self.t2m_std = np.load(pjoin('t2m/Comp_v6_KLD01/meta', f'std.npy'))
-        
+        self.t2m_mean = np.load(pjoin('/u1/khabashy/LoRA-MDM/dataset/t2m/Comp_v6_KLD01/meta', f'mean.npy'))
+        self.t2m_std = np.load(pjoin('/u1/khabashy/LoRA-MDM/dataset/t2m/Comp_v6_KLD01/meta', f'std.npy'))
+
         self.split_file = pjoin(opt.data_root, f'{split}.txt')
         if mode == 'text_only':
             self.t2m_dataset = TextOnlyDataset(self.opt, self.mean, self.std, self.split_file)
@@ -784,6 +784,7 @@ class HumanML3D(data.Dataset):
         features = features * self.std + self.mean
         features = (features - self.t2m_mean) / self.t2m_std
         return features
+
 
 # A wrapper class for t2m original dataset for MDM purposes
 class KIT(HumanML3D):

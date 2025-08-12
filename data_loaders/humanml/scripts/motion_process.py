@@ -9,6 +9,67 @@ from data_loaders.humanml.utils.paramUtil import *
 import torch
 from tqdm import tqdm
 
+from torch.utils.data import Dataset
+
+class Text2MotionDataset(Dataset):
+    def __init__(self, data_dir, split='train', num_frames=196):
+        self.data_dir = data_dir
+        self.split = split
+        self.num_frames = num_frames
+
+        self.motion_dir = os.path.join(data_dir, "motions")
+        with open(os.path.join(data_dir, f"{split}.txt")) as f:
+            self.motion_names = [line.strip() for line in f]
+
+        self.action_list = None
+        self.label_map = {}
+        self.num_actions = 12
+
+        if os.path.exists(os.path.join(data_dir, "actions.txt")):
+            with open(os.path.join(data_dir, "actions.txt")) as f:
+                self.action_list = [line.strip() for line in f]
+            self.label_map = {name: i for i, name in enumerate(self.action_list)}
+
+        self.mean = np.load(os.path.join(data_dir, "Mean.npy"))
+        self.std = np.load(os.path.join(data_dir, "Std.npy"))
+
+    def __len__(self):
+        return len(self.motion_names)
+
+    def __getitem__(self, index):
+        motion_name = self.motion_names[index]
+        motion = np.load(os.path.join(self.motion_dir, f"{motion_name}.npy"))
+        motion = (motion - self.mean) / self.std
+        motion = motion[:self.num_frames]
+        motion = torch.from_numpy(motion).float()
+
+        # handle label if available
+        label = None
+        if self.action_list is not None:
+            action_name = "_".join(motion_name.split("_")[:-1])
+            label = self.label_map[action_name]
+            label = torch.tensor([label]).long()
+
+        return {
+            "motion": motion,       # [T, D]
+            "length": motion.shape[0],
+            "text": motion_name,    # Not really used here
+            "action": label         # Used for conditioning
+        }
+
+class Text2MotionDatasetV2(Text2MotionDataset):
+    def __init__(self, data_dir, split='train', num_frames=196, styles=None):
+        super().__init__(data_dir=data_dir, split=split, num_frames=num_frames)
+        self.styles = styles
+
+    def __getitem__(self, idx):
+        item = super().__getitem__(idx)
+        if self.styles:
+            item["style"] = self.styles[0]  # style name used for LoRA
+        return item
+
+
+
 # positions (batch, joint_num, 3)
 def uniform_skeleton(positions, target_offset):
     src_skel = Skeleton(n_raw_offsets, kinematic_chain, 'cpu')

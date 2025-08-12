@@ -57,6 +57,21 @@ class MDM(nn.Module):
         self.emb_before_mask = kargs.get('emb_before_mask', False)
         self.mask_frames = kargs.get('mask_frames', False)
         self.arch = arch
+
+        # --- Age conditioner (continuous scalar -> latent_dim) ---
+        self.age_norm = kargs.get('age_norm', 'zscore')   # 'zscore' | 'minmax' | 'none'
+        self.age_mean = float(kargs.get('age_mean', 60.0))
+        self.age_std  = float(kargs.get('age_std', 15.0))
+        self.age_min  = float(kargs.get('age_min', 18.0))
+        self.age_max  = float(kargs.get('age_max', 90.0))
+
+        if 'age' in self.cond_mode:
+            self.embed_age = nn.Sequential(
+                nn.Linear(1, self.latent_dim),
+                nn.SiLU(),
+                nn.Linear(self.latent_dim, self.latent_dim),
+            )
+
         # self.gru_emb_dim = self.latent_dim if self.arch == 'gru' else 0
         # self.input_process = InputProcess(self.data_rep, self.input_feats+self.gru_emb_dim, self.latent_dim)
         self.input_process = InputProcess(self.data_rep, self.input_feats, self.latent_dim)
@@ -148,14 +163,29 @@ class MDM(nn.Module):
                 p.requires_grad = False
         
         from lora_pytorch import LoRA
+        # if self.arch == 'trans_dec':
+        #     # self.old_dec = self.seqTransDecoder
+        #     if self.lora_layer is not None  and self.lora_layer >=0:
+        #         layer =  LoRA.from_module(self.seqTransDecoder.layers[self.lora_layer], rank=self.lora_rank, no_lora_q=self.no_lora_q, lora_ff=self.lora_ff)
+        #         self.seqTransDecoder.layers[self.lora_layer] = layer
+        #     else:
+        #         self.seqTransDecoder = LoRA.from_module(self.seqTransDecoder, rank=self.lora_rank, no_lora_q=self.no_lora_q, lora_ff=self.lora_ff)
         if self.arch == 'trans_dec':
-            # self.old_dec = self.seqTransDecoder
-            if self.lora_layer is not None  and self.lora_layer >=0:
-                layer =  LoRA.from_module(self.seqTransDecoder.layers[self.lora_layer], rank=self.lora_rank, no_lora_q=self.no_lora_q, lora_ff=self.lora_ff)
-                self.seqTransDecoder.layers[self.lora_layer] = layer
+            if self.lora_layer is not None and self.lora_layer >= 0:
+                self.seqTransDecoder.layers[self.lora_layer] = LoRA.from_module(
+                    self.seqTransDecoder.layers[self.lora_layer],
+                    rank=self.lora_rank,
+                    no_lora_q=self.no_lora_q,
+                    lora_ff=self.lora_ff
+                )
             else:
-                self.seqTransDecoder = LoRA.from_module(self.seqTransDecoder, rank=self.lora_rank, no_lora_q=self.no_lora_q, lora_ff=self.lora_ff)
-
+                for i in range(len(self.seqTransDecoder.layers)):
+                    self.seqTransDecoder.layers[i] = LoRA.from_module(
+                        self.seqTransDecoder.layers[i],
+                        rank=self.lora_rank,
+                        no_lora_q=self.no_lora_q,
+                        lora_ff=self.lora_ff
+                    )
             
         elif self.arch == 'trans_enc':
             # self.old_enc = self.seqTransEncoder
@@ -168,8 +198,11 @@ class MDM(nn.Module):
             
         else:
             raise ValueError('Please choose correct architecture [trans_enc, trans_dec]')
-                    
+        
     def mask_cond(self, cond, force_mask=False):
+        if cond.dim() == 2:  # [B, D]
+            cond = cond.unsqueeze(0)  # → [1, B, D]
+
         seq_len, bs, d = cond.shape
         if force_mask:
             return torch.zeros_like(cond)
@@ -226,6 +259,27 @@ class MDM(nn.Module):
             action_emb = self.embed_action(y['action'])
             emb += self.mask_cond(action_emb, force_mask=force_mask)
 
+        if 'age' in self.cond_mode:
+            assert 'age' in y, "cond_mode includes 'age' but 'age' not provided in y"
+            age = y['age']  # shape [B] or [B,1]
+            if age.dim() == 1:
+                age = age.unsqueeze(-1)
+            age = age.float().to(emb.device)
+
+            # normalize
+            if self.age_norm == 'zscore':
+                age = (age - self.age_mean) / max(self.age_std, 1e-6)
+            elif self.age_norm == 'minmax':
+                rng = max(self.age_max - self.age_min, 1e-6)
+                age = (age - self.age_min) / rng  # 0..1
+                age = age * 2.0 - 1.0             # -> [-1,1]
+            # else: 'none' -> raw age
+
+            age_emb = self.embed_age(age)                 # [B, D]
+            age_emb = self.mask_cond(age_emb, force_mask=force_mask)  # [B, D]
+            age_emb = age_emb.unsqueeze(0)                # [1, B, D]
+            emb = emb + age_emb
+
         if self.arch == 'gru':
             x_reshaped = x.reshape(bs, njoints*nfeats, 1, nframes)
             emb_gru = emb.repeat(nframes, 1, 1)     #[#frames, bs, d]
@@ -237,7 +291,9 @@ class MDM(nn.Module):
 
         # TODO - move to collate
         frames_mask = None
-        is_valid_mask = y['mask'].shape[-1] > 1  # Don't use mask with the generate script
+        # is_valid_mask = y['mask'].shape[-1] > 1  # Don't use mask with the generate script
+        is_valid_mask = 'mask' in y and y['mask'].shape[-1] > 1
+
         if self.mask_frames and is_valid_mask:
             frames_mask = torch.logical_not(y['mask'][..., :x.shape[0]].squeeze(1).squeeze(1)).to(device=x.device)
             if self.emb_trans_dec or self.arch == 'trans_enc':
@@ -256,15 +312,23 @@ class MDM(nn.Module):
             else:
                 xseq = x
             xseq = self.sequence_pos_encoder(xseq)  # [seqlen+1, bs, d]
+            
+            if emb.ndim == 2:  # [B, D]
+                emb = emb.unsqueeze(0)  # -> [1, B, D]
+
             if self.emb_trans_dec:
-                output = self.seqTransDecoder(xseq, memory=emb, tgt_key_padding_mask=frames_mask)[1:] # [seqlen, bs, d] # Rotem's bug fix # FIXME - maybe add a causal mask
+                output = self.seqTransDecoder(tgt=xseq, memory=emb, tgt_key_padding_mask=frames_mask)[1:] # [seqlen, bs, d] # Rotem's bug fix # FIXME - maybe add a causal mask
             else:
-                if self.text_encoder_type == 'clip':
-                    output = self.seqTransDecoder(xseq, memory=emb, tgt_key_padding_mask=frames_mask)
-                elif self.text_encoder_type == 'bert':
-                    output = self.seqTransDecoder(xseq, memory=emb, memory_key_padding_mask=text_mask, tgt_key_padding_mask=frames_mask)  # Rotem's bug fix
+                if hasattr(self, 'cond_mode') and 'text' in self.cond_mode:
+                    if hasattr(self, 'text_encoder_type') and self.text_encoder_type == 'clip':
+                        output = self.seqTransDecoder(tgt=xseq, memory=emb, tgt_key_padding_mask=frames_mask)
+                    elif hasattr(self, 'text_encoder_type') and self.text_encoder_type == 'bert':
+                        output = self.seqTransDecoder(tgt=xseq, memory=emb, memory_key_padding_mask=text_mask, tgt_key_padding_mask=frames_mask)
+                    else:
+                        raise ValueError("Unsupported or missing text_encoder_type.")
                 else:
-                    raise ValueError
+                    output = self.seqTransDecoder(tgt=xseq, memory=emb, tgt_key_padding_mask=frames_mask)
+
         elif self.arch == 'gru':
             xseq = x
             xseq = self.sequence_pos_encoder(xseq)  # [seqlen, bs, d]

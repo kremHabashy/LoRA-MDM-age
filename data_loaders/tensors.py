@@ -66,3 +66,29 @@ def t2m_collate(batch):
     return collate(adapted_batch)
 
 
+def humanact12_collate(batch):
+    motions = []
+    conds = []
+    for item in batch:
+        motions.append(item["motion"])  # [T, D]
+        conds.append({"y": {"action": item["action"]}})
+
+    # Pad to [B, T, D]
+    padded = torch.nn.utils.rnn.pad_sequence(motions, batch_first=True)
+
+    # Get D and T
+    B, T, D = padded.shape
+
+    # Infer njoints/nfeats safely
+    nfeats = 6
+    if D % nfeats != 0:
+        raise ValueError(f"Cannot reshape feature dim {D} into shape (*, {nfeats})")
+    njoints = D // nfeats
+
+    # Reshape: [B, T, D] → [B, J, F, T]
+    padded = padded.permute(0, 2, 1)            # [B, D, T]
+    padded = padded.reshape(B, njoints, nfeats, T)
+
+    return padded, conds
+
+
