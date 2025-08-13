@@ -1,4 +1,5 @@
 from os.path import join as pjoin
+import importlib.util as _importlib_util
 
 from data_loaders.humanml.common.skeleton import Skeleton
 import numpy as np
@@ -493,61 +494,241 @@ def recover_from_ric(data, joints_num):
     return positions
 
 
+def _load_vc_metadata(meta_py_path):
+    """Dynamically import your metadata.py and build subject dicts."""
+    spec = _importlib_util.spec_from_file_location("vcmeta", meta_py_path)
+    mod = _importlib_util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    able = mod.create_able_bodied_metadata()
+    stroke = mod.create_stroke_metadata()
+    return able, stroke
+
+def _subject_from_relpath(rel):  # e.g., "SUBJ01/SUBJ1_0_humanml3d_22joints"
+    return rel.split(os.sep, 1)[0]
+
+def _compose_caption(subj_id, md):
+    # Compose a compact HumanML-style caption from metadata.
+    base = "an adult walking."
+    if not md:
+        return base
+    extras = []
+    # age = md.get("age")
+    # if isinstance(age, (int, float)) and age > 0:
+    #     extras.append(f"age {int(age)} years")
+    # h = md.get("height_m")
+    # if isinstance(h, (int, float)) and h > 0:
+    #     extras.append(f"height {h:.2f} m")
+    # leg = md.get("leg_length_m")
+    # if isinstance(leg, (int, float)) and leg > 0:
+    #     extras.append(f"leg length {leg:.2f} m")
+    # sp = md.get("walking_speeds", {})
+    # ls, rs = sp.get("left_speed"), sp.get("right_speed")
+    # if isinstance(ls, (int, float)) and isinstance(rs, (int, float)):
+    #     extras.append(f"speed {0.5*(ls+rs):.2f} m/s")
+    return f"{base} ({', '.join(extras)})" if extras else base
+
+def _safe_age_from_meta(subj_id, able_md, stroke_md):
+    d = stroke_md.get(subj_id, {}) if subj_id.startswith("TVC") else able_md.get(subj_id, {})
+    a = d.get("age", -1)
+    try:
+        return float(a) if a is not None else -1.0
+    except Exception:
+        return -1.0
+
+
+def _load_joints(npz_obj):
+    # Try common keys
+    for k in ('joints', 'keypoints3d', 'xyz', 'J'):
+        if k in npz_obj.files:
+            arr = npz_obj[k]
+            break
+    else:
+        raise KeyError(f"No joints array found in {list(npz_obj.files)}")
+    arr = np.asarray(arr)
+    if arr.ndim == 2 and arr.shape[1] == 66:  # flattened T x (22*3)
+        arr = arr.reshape(-1, 22, 3)
+    assert arr.ndim == 3 and arr.shape[1] in (21, 22) and arr.shape[2] == 3, \
+        f"Unexpected joints shape {arr.shape} (expect [T,22,3] or [T,21,3])"
+    return arr
+
+
 def build_vc_dataset(vc_root: str):
-    """Convert VC npz joints to HumanML 263-D features and compute stats."""
+    """
+    Convert VC (22-joint) NPZ into HumanML3D 263-D features using split lists.
+    Expected input:
+      vc_root/Comp_v6_KLD01/SUBJxx/*.npz
+      and split lists in args.vc_splits_dir/{train,val,test}.txt
+    """
+    import glob
     global tgt_offsets, n_raw_offsets, kinematic_chain, fid_r, fid_l, face_joint_indx
+    global l_idx1, l_idx2
 
     base = os.path.join(vc_root, 'Comp_v6_KLD01')
-    train_raw = os.path.join(base, 'train_raw')
-    first_file = sorted([f for f in os.listdir(train_raw) if f.endswith('.npz')])[0]
-    example = np.load(os.path.join(train_raw, first_file), allow_pickle=True)['joints']
-    example = torch.from_numpy(example)
+    splits_dir = args.vc_splits_dir
 
+    # ---- T2M (HumanML3D) skeleton config (22 joints) ----
     n_raw_offsets = torch.from_numpy(t2m_raw_offsets)
     kinematic_chain = t2m_kinematic_chain
-    tgt_skel = Skeleton(n_raw_offsets, kinematic_chain, 'cpu')
-    tgt_offsets = tgt_skel.get_offsets_joints(example[0])
+    # Lower legs indices in 22-joint t2m order:
+    l_idx1, l_idx2 = 5, 8
+    # feet id (right/left) in 22-joint t2m order:
     fid_r, fid_l = [8, 11], [7, 10]
+    # face joints indices (r_hip, l_hip, r_shoulder, l_shoulder)
     face_joint_indx = [2, 1, 17, 16]
 
+    # ---- Read split files ----
+    split_names = []
+    for s in ('train', 'val', 'test'):
+        fpath = os.path.join(splits_dir, f'{s}.txt')
+        if os.path.exists(fpath):
+            with open(fpath) as f:
+                rels = [ln.strip() for ln in f if ln.strip()]
+            # expand to absolute paths under base
+            files = []
+            for rel in rels:
+                p = os.path.join(base, rel)
+                if not p.endswith('.npz'):
+                    p += '.npz'
+                if not os.path.exists(p):
+                    raise FileNotFoundError(f"Listed in {s}.txt but missing on disk: {p}")
+                files.append(p)
+            split_names.append((s, files))
+
+    # Fallback: if no split files at all, dump everything into 'train'
+    if not split_names:
+        all_npz = sorted(glob.glob(os.path.join(base, 'SUBJ*', '*.npz')))
+        split_names = [('train', all_npz)]
+
+    # ---- Compute target offsets from the first file ----
+    sample_file = split_names[0][1][0]
+    ex = np.load(sample_file, allow_pickle=True)
+    joints0 = _load_joints(ex)
+    tgt_skel = Skeleton(n_raw_offsets, kinematic_chain, 'cpu')
+    tgt_offsets = tgt_skel.get_offsets_joints(torch.from_numpy(joints0[0]))
+
+    # ---- Outputs ----
     meta_dir = os.path.join(base, 'meta')
     os.makedirs(meta_dir, exist_ok=True)
     train_feats = []
 
-    for split in ['train', 'val', 'test']:
-        raw_dir = os.path.join(base, f'{split}_raw')
+    able_md, stroke_md = _load_vc_metadata(args.vc_meta_py)
+
+    for split, files in split_names:
         out_motion = os.path.join(base, split, 'motions')
-        out_text = os.path.join(base, split, 'texts')
-        out_age = os.path.join(base, split, 'ages')
+        out_text   = os.path.join(base, split, 'texts')
+        out_age    = os.path.join(base, split, 'ages')
         os.makedirs(out_motion, exist_ok=True)
         os.makedirs(out_text, exist_ok=True)
         os.makedirs(out_age, exist_ok=True)
 
         names = []
-        for fname in tqdm([f for f in os.listdir(raw_dir) if f.endswith('.npz')]):
-            data = np.load(os.path.join(raw_dir, fname), allow_pickle=True)
-            joints = data['joints'].astype(np.float32)
-            feats, _, _, _ = process_file(joints, 0.002)
-            assert feats.shape[1] == 263, f'Expected 263 features, got {feats.shape[1]}'
-            name = os.path.splitext(fname)[0]
-            np.save(os.path.join(out_motion, name + '.npy'), feats.astype(np.float32))
-            with open(os.path.join(out_text, name + '.txt'), 'w') as f_txt:
-                f_txt.write('placeholder')
-            age = float(data['age']) if 'age' in data.files else -1.0
-            with open(os.path.join(out_age, name + '.txt'), 'w') as f_age:
-                f_age.write(str(age))
-            names.append(name)
+        for fin in tqdm(files, desc=f"VC→HumanML3D [{split}]"):
+            d = np.load(fin, allow_pickle=True)
+            joints = _load_joints(d).astype(np.float32)
+
+            feats, _, _, _ = process_file(joints, 0.002)   # -> (T-1, 263)
+            assert feats.shape[1] == 263, f"Expected 263 features, got {feats.shape[1]} for {fin}"
+
+            # relative name WITHOUT extension, keep subject subdir to avoid name clashes
+            rel = os.path.splitext(os.path.relpath(fin, base))[0]  # e.g. SUBJ01/SUBJ1_0_humanml3d_22joints
+            subj_id = _subject_from_relpath(rel)
+
+            # where to save
+            dest_m = os.path.join(out_motion, rel + '.npy')
+            dest_t = os.path.join(out_text,   rel + '.txt')
+            dest_a = os.path.join(out_age,    rel + '.txt')
+            os.makedirs(os.path.dirname(dest_m), exist_ok=True)
+            os.makedirs(os.path.dirname(dest_t), exist_ok=True)
+            os.makedirs(os.path.dirname(dest_a), exist_ok=True)
+
+            np.save(dest_m, feats.astype(np.float32))
+
+            subj_meta = (stroke_md if subj_id.startswith("TVC") else able_md).get(subj_id, {})
+            caption = _compose_caption(subj_id, subj_meta)
+            with open(dest_t, 'w') as f_txt:
+                f_txt.write(caption)
+
+            age_val = _safe_age_from_meta(subj_id, able_md, stroke_md)
+            with open(dest_a, 'w') as f_age:
+                f_age.write(str(age_val))
+
+
+            # the name string that HumanML loader will use
+            names.append(rel)
+
             if split == 'train':
                 train_feats.append(feats)
+
+        # write split list at dataset root (what HumanML loader expects)
         with open(os.path.join(base, f'{split}.txt'), 'w') as f_split:
             f_split.write('\n'.join(names))
 
+    # ---- Stats over train ----
     if train_feats:
         cat = np.concatenate(train_feats, axis=0)
-        mean = cat.mean(axis=0)
-        std = cat.std(axis=0)
-        np.save(os.path.join(meta_dir, 'mean.npy'), mean.astype(np.float32))
-        np.save(os.path.join(meta_dir, 'std.npy'), std.astype(np.float32))
+        mean = cat.mean(axis=0).astype(np.float32)
+        std  = cat.std(axis=0).astype(np.float32)
+        np.save(os.path.join(meta_dir, 'mean.npy'), mean)
+        np.save(os.path.join(meta_dir, 'std.npy'),  std)
+        # Some code paths expect capitalized copies at data_root
+        np.save(os.path.join(base, 'Mean.npy'), mean)
+        np.save(os.path.join(base, 'Std.npy'),  std)
+
+def add_vc_ages_and_placeholders(vc_base: str, meta_py_path: str, overwrite: bool = True):
+    """
+    Populate ages/ and texts/ for an already-converted VC dataset.
+
+    Expects layout like:
+      vc_base/
+        train/
+          motions/SUBJxx/<clip>.npy
+          [texts/... will be created/updated]
+          [ages/...  will be created/updated]
+        val/...
+        test/...
+
+    We DO NOT touch motion files or recompute stats/splits.
+    """
+    import glob
+
+    able_md, stroke_md = _load_vc_metadata(meta_py_path)
+
+    def rel_from_motion(motion_path: str, split: str) -> str:
+        # e.g. ".../van_criekinge/train/motions/SUBJ03/SUBJ3_0_humanml3d_22joints.npy"
+        # -> "SUBJ03/SUBJ3_0_humanml3d_22joints"
+        stem = os.path.splitext(os.path.relpath(motion_path,
+                    os.path.join(vc_base, split, 'motions')))[0]
+        return stem
+
+    splits = [s for s in ('train', 'val', 'test')
+              if os.path.isdir(os.path.join(vc_base, s, 'motions'))]
+
+    for split in splits:
+        motions_dir = os.path.join(vc_base, split, 'motions')
+        texts_dir   = os.path.join(vc_base, split, 'texts')
+        ages_dir    = os.path.join(vc_base, split, 'ages')
+        os.makedirs(texts_dir, exist_ok=True)
+        os.makedirs(ages_dir,  exist_ok=True)
+
+        motion_files = sorted(glob.glob(os.path.join(motions_dir, '**', '*.npy'), recursive=True))
+        for mpath in tqdm(motion_files, desc=f"Add ages/placeholders [{split}]"):
+            rel   = rel_from_motion(mpath, split)
+            subj  = _subject_from_relpath(rel)
+            age_f = os.path.join(ages_dir,  rel + '.txt')
+            txt_f = os.path.join(texts_dir, rel + '.txt')
+            os.makedirs(os.path.dirname(age_f), exist_ok=True)
+            os.makedirs(os.path.dirname(txt_f), exist_ok=True)
+
+            # AGE
+            age_val = _safe_age_from_meta(subj, able_md, stroke_md)
+            if overwrite or not os.path.exists(age_f):
+                with open(age_f, 'w') as fa:
+                    fa.write(str(age_val))
+
+            # PLACEHOLDER TEXT
+            if overwrite or not os.path.exists(txt_f):
+                with open(txt_f, 'w') as ft:
+                    ft.write('An adult is walking.')
 
 
 if __name__ == "__main__":
@@ -555,106 +736,24 @@ if __name__ == "__main__":
     parser.add_argument("--build_vc", action="store_true",
                         help="Convert VC joints to HumanML3D features")
     parser.add_argument("--vc_root", type=str, default="dataset/HumanML3D")
+    parser.add_argument("--vc_splits_dir", type=str, default="/u1/khabashy/LoRA-MDM/dataset/vc",
+                    help="Dir with {train,val,test}.txt listing relative NPZ paths like 'SUBJ01/xxx.npz'")
+    parser.add_argument("--add_vc_ages_text", action="store_true",
+                    help="Create/overwrite ages/ and texts/ (placeholder) for existing VC features.")
+    parser.add_argument("--vc_base", type=str,
+                        help="Path to base of your converted VC dataset (e.g. .../data/humanml3d/van_criekinge).")
+    parser.add_argument("--vc_meta_py", type=str,
+                        default="/u1/khabashy/LoRA-MDM/data/van_criekinge/metadata.py",
+                        help="Path to metadata.py containing subject ages.")
+
+
     args = parser.parse_args()
     if args.build_vc:
         build_vc_dataset(args.vc_root)
+
+    if args.add_vc_ages_text:
+        if not args.vc_base:
+            raise ValueError("--vc_base is required with --add_vc_ages_text")
+        add_vc_ages_and_placeholders(args.vc_base, args.vc_meta_py, overwrite=True)
+
     sys.exit(0)
-'''
-For Text2Motion Dataset
-'''
-'''
-if __name__ == "__main__":
-    example_id = "000021"
-    # Lower legs
-    l_idx1, l_idx2 = 5, 8
-    # Right/Left foot
-    fid_r, fid_l = [8, 11], [7, 10]
-    # Face direction, r_hip, l_hip, sdr_r, sdr_l
-    face_joint_indx = [2, 1, 17, 16]
-    # l_hip, r_hip
-    r_hip, l_hip = 2, 1
-    joints_num = 22
-    # ds_num = 8
-    data_dir = '../dataset/pose_data_raw/joints/'
-    save_dir1 = '../dataset/pose_data_raw/new_joints/'
-    save_dir2 = '../dataset/pose_data_raw/new_joint_vecs/'
-
-    n_raw_offsets = torch.from_numpy(t2m_raw_offsets)
-    kinematic_chain = t2m_kinematic_chain
-
-    # Get offsets of target skeleton
-    example_data = np.load(os.path.join(data_dir, example_id + '.npy'))
-    example_data = example_data.reshape(len(example_data), -1, 3)
-    example_data = torch.from_numpy(example_data)
-    tgt_skel = Skeleton(n_raw_offsets, kinematic_chain, 'cpu')
-    # (joints_num, 3)
-    tgt_offsets = tgt_skel.get_offsets_joints(example_data[0])
-    # print(tgt_offsets)
-
-    source_list = os.listdir(data_dir)
-    frame_num = 0
-    for source_file in tqdm(source_list):
-        source_data = np.load(os.path.join(data_dir, source_file))[:, :joints_num]
-        try:
-            dataset, ground_positions, positions, l_velocity = process_file(source_data, 0.002)
-            rec_ric_data = recover_from_ric(torch.from_numpy(dataset).unsqueeze(0).float(), joints_num)
-            np.save(pjoin(save_dir1, source_file), rec_ric_data.squeeze().numpy())
-            np.save(pjoin(save_dir2, source_file), dataset)
-            frame_num += dataset.shape[0]
-        except Exception as e:
-            print(source_file)
-            print(e)
-
-    print('Total clips: %d, Frames: %d, Duration: %fm' %
-          (len(source_list), frame_num, frame_num / 20 / 60))
-'''
-
-if __name__ == "__main__":
-    example_id = "03950_gt"
-    # Lower legs
-    l_idx1, l_idx2 = 17, 18
-    # Right/Left foot
-    fid_r, fid_l = [14, 15], [19, 20]
-    # Face direction, r_hip, l_hip, sdr_r, sdr_l
-    face_joint_indx = [11, 16, 5, 8]
-    # l_hip, r_hip
-    r_hip, l_hip = 11, 16
-    joints_num = 21
-    # ds_num = 8
-    data_dir = '../dataset/kit_mocap_dataset/joints/'
-    save_dir1 = '../dataset/kit_mocap_dataset/new_joints/'
-    save_dir2 = '../dataset/kit_mocap_dataset/new_joint_vecs/'
-
-    n_raw_offsets = torch.from_numpy(kit_raw_offsets)
-    kinematic_chain = kit_kinematic_chain
-
-    '''Get offsets of target skeleton'''
-    example_data = np.load(os.path.join(data_dir, example_id + '.npy'))
-    example_data = example_data.reshape(len(example_data), -1, 3)
-    example_data = torch.from_numpy(example_data)
-    tgt_skel = Skeleton(n_raw_offsets, kinematic_chain, 'cpu')
-    # (joints_num, 3)
-    tgt_offsets = tgt_skel.get_offsets_joints(example_data[0])
-    # print(tgt_offsets)
-
-    source_list = os.listdir(data_dir)
-    frame_num = 0
-    '''Read source dataset'''
-    for source_file in tqdm(source_list):
-        source_data = np.load(os.path.join(data_dir, source_file))[:, :joints_num]
-        try:
-            name = ''.join(source_file[:-7].split('_')) + '.npy'
-            data, ground_positions, positions, l_velocity = process_file(source_data, 0.05)
-            rec_ric_data = recover_from_ric(torch.from_numpy(data).unsqueeze(0).float(), joints_num)
-            if np.isnan(rec_ric_data.numpy()).any():
-                print(source_file)
-                continue
-            np.save(pjoin(save_dir1, name), rec_ric_data.squeeze().numpy())
-            np.save(pjoin(save_dir2, name), data)
-            frame_num += data.shape[0]
-        except Exception as e:
-            print(source_file)
-            print(e)
-
-    print('Total clips: %d, Frames: %d, Duration: %fm' %
-          (len(source_list), frame_num, frame_num / 12.5 / 60))

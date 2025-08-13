@@ -95,5 +95,3 @@ def humanact12_collate(batch):
     padded = padded.reshape(B, njoints, nfeats, T)
 
     return padded, conds
-
-

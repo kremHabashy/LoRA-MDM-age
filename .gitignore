@@ -1,12 +1,25 @@
+# data & outputs
 data/
-results/
-save/
-checkpoints/
-body_models/
-**/*.npz
-**/*.c3d
+datasets/
+outputs/
+wandb/
+runs/
+logs/
+
+# big/binary artifacts
+*.npy
+*.npz
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.pkl
+*.zip
+*.tar
+*.mp4
+*.avi
+
+# Python cruft
 __pycache__/
 *.pyc
-.DS_Store
-.ipynb_checkpoints/
-data/ceti_age_kinematics/ceti-age-kinematics/code/
+.env
