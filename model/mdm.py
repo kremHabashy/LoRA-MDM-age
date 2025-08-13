@@ -57,19 +57,12 @@ class MDM(nn.Module):
         self.emb_before_mask = kargs.get('emb_before_mask', False)
         self.mask_frames = kargs.get('mask_frames', False)
         self.arch = arch
-
-        # --- Age conditioner (continuous scalar -> latent_dim) ---
-        self.age_norm = kargs.get('age_norm', 'zscore')   # 'zscore' | 'minmax' | 'none'
-        self.age_mean = float(kargs.get('age_mean', 60.0))
-        self.age_std  = float(kargs.get('age_std', 15.0))
-        self.age_min  = float(kargs.get('age_min', 18.0))
-        self.age_max  = float(kargs.get('age_max', 90.0))
-
-        if 'age' in self.cond_mode:
-            self.embed_age = nn.Sequential(
-                nn.Linear(1, self.latent_dim),
-                nn.SiLU(),
-                nn.Linear(self.latent_dim, self.latent_dim),
+        # optional age conditioning
+        self.use_age = kargs.get('use_age', False)
+        if self.use_age:
+            self.age_mlp = nn.Sequential(
+                nn.Linear(1, self.latent_dim // 2), nn.SiLU(),
+                nn.Linear(self.latent_dim // 2, self.latent_dim)
             )
 
         # self.gru_emb_dim = self.latent_dim if self.arch == 'gru' else 0
@@ -258,27 +251,11 @@ class MDM(nn.Module):
         if 'action' in self.cond_mode:
             action_emb = self.embed_action(y['action'])
             emb += self.mask_cond(action_emb, force_mask=force_mask)
-
-        if 'age' in self.cond_mode:
-            assert 'age' in y, "cond_mode includes 'age' but 'age' not provided in y"
-            age = y['age']  # shape [B] or [B,1]
-            if age.dim() == 1:
-                age = age.unsqueeze(-1)
-            age = age.float().to(emb.device)
-
-            # normalize
-            if self.age_norm == 'zscore':
-                age = (age - self.age_mean) / max(self.age_std, 1e-6)
-            elif self.age_norm == 'minmax':
-                rng = max(self.age_max - self.age_min, 1e-6)
-                age = (age - self.age_min) / rng  # 0..1
-                age = age * 2.0 - 1.0             # -> [-1,1]
-            # else: 'none' -> raw age
-
-            age_emb = self.embed_age(age)                 # [B, D]
-            age_emb = self.mask_cond(age_emb, force_mask=force_mask)  # [B, D]
-            age_emb = age_emb.unsqueeze(0)                # [1, B, D]
-            emb = emb + age_emb
+        if self.use_age and (y is not None) and ('age' in y) and (y['age'] is not None):
+            age = y['age'].float()
+            if age.dim() == 2:
+                age = age.unsqueeze(0)
+            emb = emb + self.age_mlp(age)
 
         if self.arch == 'gru':
             x_reshaped = x.reshape(bs, njoints*nfeats, 1, nframes)

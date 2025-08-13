@@ -349,9 +349,16 @@ class Text2MotionDatasetV2(data.Dataset):
             motion = np.concatenate([motion,
                                      np.zeros((self.max_motion_length - m_length, motion.shape[1]))
                                      ], axis=0)
-        # print(word_embeddings.shape, motion.shape)
-        # print(tokens)
-        return word_embeddings, pos_one_hots, caption, sent_len, motion, m_length, '_'.join(tokens)
+        age_val = -1.0
+        age_path = pjoin(os.path.dirname(self.opt.motion_dir), 'ages', self.name_list[idx] + '.txt')
+        if os.path.exists(age_path):
+            try:
+                with open(age_path, 'r') as f:
+                    age_val = float(f.read().strip())
+            except Exception:
+                pass
+
+        return word_embeddings, pos_one_hots, caption, sent_len, motion, m_length, '_'.join(tokens), age_val
 
 
 '''For use of training baseline'''

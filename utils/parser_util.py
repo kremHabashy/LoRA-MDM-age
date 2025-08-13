@@ -95,6 +95,8 @@ def add_model_options(parser):
     group.add_argument("--emb_before_mask", action='store_true')
     group.add_argument("--pos_embed_max_len", default=5000, type=int)
     group.add_argument("--use_ema", action='store_true')
+    group.add_argument("--age_cond", action='store_true',
+                       help="Enable age MLP conditioning.")
     # NEW: let user choose conditioning explicitly
     group.add_argument("--cond_mode", default=None, type=str,
                        help="Conditioning string, e.g. 'text', 'age', 'text+age', 'action', 'no_cond'.")
