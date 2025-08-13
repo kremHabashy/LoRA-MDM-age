@@ -5,6 +5,8 @@ outputs/
 wandb/
 runs/
 logs/
+dataset/HumanML3D/texts/
+
 
 # big/binary artifacts
 *.npy
