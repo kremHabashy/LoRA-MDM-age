@@ -8,6 +8,8 @@ from data_loaders.humanml.utils.paramUtil import *
 
 import torch
 from tqdm import tqdm
+import argparse
+import sys
 
 from torch.utils.data import Dataset
 
@@ -489,6 +491,74 @@ def recover_from_ric(data, joints_num):
     positions = torch.cat([r_pos.unsqueeze(-2), positions], dim=-2)
 
     return positions
+
+
+def build_vc_dataset(vc_root: str):
+    """Convert VC npz joints to HumanML 263-D features and compute stats."""
+    global tgt_offsets, n_raw_offsets, kinematic_chain, fid_r, fid_l, face_joint_indx
+
+    base = os.path.join(vc_root, 'Comp_v6_KLD01')
+    train_raw = os.path.join(base, 'train_raw')
+    first_file = sorted([f for f in os.listdir(train_raw) if f.endswith('.npz')])[0]
+    example = np.load(os.path.join(train_raw, first_file), allow_pickle=True)['joints']
+    example = torch.from_numpy(example)
+
+    n_raw_offsets = torch.from_numpy(t2m_raw_offsets)
+    kinematic_chain = t2m_kinematic_chain
+    tgt_skel = Skeleton(n_raw_offsets, kinematic_chain, 'cpu')
+    tgt_offsets = tgt_skel.get_offsets_joints(example[0])
+    fid_r, fid_l = [8, 11], [7, 10]
+    face_joint_indx = [2, 1, 17, 16]
+
+    meta_dir = os.path.join(base, 'meta')
+    os.makedirs(meta_dir, exist_ok=True)
+    train_feats = []
+
+    for split in ['train', 'val', 'test']:
+        raw_dir = os.path.join(base, f'{split}_raw')
+        out_motion = os.path.join(base, split, 'motions')
+        out_text = os.path.join(base, split, 'texts')
+        out_age = os.path.join(base, split, 'ages')
+        os.makedirs(out_motion, exist_ok=True)
+        os.makedirs(out_text, exist_ok=True)
+        os.makedirs(out_age, exist_ok=True)
+
+        names = []
+        for fname in tqdm([f for f in os.listdir(raw_dir) if f.endswith('.npz')]):
+            data = np.load(os.path.join(raw_dir, fname), allow_pickle=True)
+            joints = data['joints'].astype(np.float32)
+            feats, _, _, _ = process_file(joints, 0.002)
+            assert feats.shape[1] == 263, f'Expected 263 features, got {feats.shape[1]}'
+            name = os.path.splitext(fname)[0]
+            np.save(os.path.join(out_motion, name + '.npy'), feats.astype(np.float32))
+            with open(os.path.join(out_text, name + '.txt'), 'w') as f_txt:
+                f_txt.write('placeholder')
+            age = float(data['age']) if 'age' in data.files else -1.0
+            with open(os.path.join(out_age, name + '.txt'), 'w') as f_age:
+                f_age.write(str(age))
+            names.append(name)
+            if split == 'train':
+                train_feats.append(feats)
+        with open(os.path.join(base, f'{split}.txt'), 'w') as f_split:
+            f_split.write('\n'.join(names))
+
+    if train_feats:
+        cat = np.concatenate(train_feats, axis=0)
+        mean = cat.mean(axis=0)
+        std = cat.std(axis=0)
+        np.save(os.path.join(meta_dir, 'mean.npy'), mean.astype(np.float32))
+        np.save(os.path.join(meta_dir, 'std.npy'), std.astype(np.float32))
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--build_vc", action="store_true",
+                        help="Convert VC joints to HumanML3D features")
+    parser.add_argument("--vc_root", type=str, default="dataset/HumanML3D")
+    args = parser.parse_args()
+    if args.build_vc:
+        build_vc_dataset(args.vc_root)
+    sys.exit(0)
 '''
 For Text2Motion Dataset
 '''

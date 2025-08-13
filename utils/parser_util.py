@@ -61,6 +61,7 @@ def add_lora_options(parser):
     group.add_argument("--lora_layer", default=-100, type=int, help='Transformers layer to use for lora, negative for all layers.')
     group.add_argument("--no_lora_q", action='store_true', help='remove lora adapter from query')
     group.add_argument("--lora_ff", action='store_true', help='add lora adapter to feed forward layers')
+    group.add_argument("--age_cond", action='store_true', help="Enable age MLP conditioning.")
 
 
 def add_base_options(parser):

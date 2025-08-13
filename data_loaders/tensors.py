@@ -47,6 +47,10 @@ def collate(batch):
         actionbatch = [b['action'] for b in notnone_batches]
         cond['y'].update({'action': torch.as_tensor(actionbatch).unsqueeze(1)})
 
+    if 'age' in notnone_batches[0]:
+        agebatch = [b['age'] for b in notnone_batches]
+        cond['y'].update({'age': torch.as_tensor(agebatch).unsqueeze(1).float()})
+
     # collate action textual names
     if 'action_text' in notnone_batches[0]:
         action_text = [b['action_text']for b in notnone_batches]
@@ -57,12 +61,17 @@ def collate(batch):
 # an adapter to our collate func
 def t2m_collate(batch):
     # batch.sort(key=lambda x: x[3], reverse=True)
-    adapted_batch = [{
-        'inp': torch.tensor(b[4].T).float().unsqueeze(1), # [seqlen, J] -> [J, 1, seqlen]
-        'text': b[2], #b[0]['caption']
-        'tokens': b[6],
-        'lengths': b[5],
-    } for b in batch]
+    adapted_batch = []
+    for b in batch:
+        item = {
+            'inp': torch.tensor(b[4].T).float().unsqueeze(1),  # [seqlen, J] -> [J, 1, seqlen]
+            'text': b[2],
+            'tokens': b[6],
+            'lengths': b[5],
+        }
+        if len(b) > 7:
+            item['age'] = b[7]
+        adapted_batch.append(item)
     return collate(adapted_batch)
 
 

@@ -203,13 +203,14 @@ class Text2MotionDataset(data.Dataset):
 
 '''For use of training text motion matching model, and evaluations'''
 class Text2MotionDatasetV2(data.Dataset):
-    def __init__(self, opt, mean, std, split_file, w_vectorizer):
+    def __init__(self, opt, mean, std, split_file, w_vectorizer, use_age=False):
         self.opt = opt
         self.w_vectorizer = w_vectorizer
         self.max_length = 20
         self.pointer = 0
         self.max_motion_length = opt.max_motion_length
         min_motion_len = 40 if self.opt.dataset_name =='t2m' else 24
+        self.use_age = use_age
 
         data_dict = {}
         id_list = []
@@ -349,9 +350,19 @@ class Text2MotionDatasetV2(data.Dataset):
             motion = np.concatenate([motion,
                                      np.zeros((self.max_motion_length - m_length, motion.shape[1]))
                                      ], axis=0)
-        # print(word_embeddings.shape, motion.shape)
-        # print(tokens)
-        return word_embeddings, pos_one_hots, caption, sent_len, motion, m_length, '_'.join(tokens)
+
+        if self.use_age:
+            age_val = -1.0
+            age_path = pjoin(os.path.dirname(self.opt.motion_dir), 'ages', self.name_list[idx] + '.txt')
+            if os.path.exists(age_path):
+                try:
+                    with open(age_path, 'r') as f:
+                        age_val = float(f.read().strip())
+                except Exception:
+                    pass
+            return word_embeddings, pos_one_hots, caption, sent_len, motion, m_length, '_'.join(tokens), age_val
+        else:
+            return word_embeddings, pos_one_hots, caption, sent_len, motion, m_length, '_'.join(tokens)
 
 
 '''For use of training baseline'''
@@ -751,6 +762,10 @@ class HumanML3D(data.Dataset):
         self.opt = opt
         print('Loading dataset %s ...' % opt.dataset_name)
 
+        # determine if age conditioning is available
+        ages_dir = pjoin(os.path.dirname(opt.motion_dir), 'ages')
+        self.use_age = kwargs.get('age_cond', False) or os.path.isdir(ages_dir)
+
         # used by our models
         self.mean = np.load(pjoin(opt.data_root, 'Mean.npy'))
         self.std = np.load(pjoin(opt.data_root, 'Std.npy'))
@@ -763,7 +778,7 @@ class HumanML3D(data.Dataset):
             self.t2m_dataset = TextOnlyDataset(self.opt, self.mean, self.std, self.split_file)
         else:
             self.w_vectorizer = WordVectorizer(pjoin(abs_base_path, 'glove'), 'our_vab')
-            self.t2m_dataset = Text2MotionDatasetV2(self.opt, self.mean, self.std, self.split_file, self.w_vectorizer)
+            self.t2m_dataset = Text2MotionDatasetV2(self.opt, self.mean, self.std, self.split_file, self.w_vectorizer, use_age=self.use_age)
             self.num_actions = 1 # dummy placeholder
 
         assert len(self.t2m_dataset) > 1, 'You loaded an empty dataset, ' \

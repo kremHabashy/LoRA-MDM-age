@@ -50,7 +50,7 @@ def get_dataset(name, num_frames, split='train', hml_mode='train',
 
     if name in ["humanml", "kit"]:
         # Text datasets (use their own internal dirs and options)
-        dataset = DATA(split=split, num_frames=num_frames, mode=hml_mode)
+        dataset = DATA(split=split, num_frames=num_frames, mode=hml_mode, **kwargs)
     elif name == "100style":
         dataset = DATA(styles, split, motion_type_to_exclude=motion_type_to_exclude)
     elif name == "vc":

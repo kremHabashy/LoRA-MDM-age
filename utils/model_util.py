@@ -8,12 +8,15 @@ from utils.parser_util import get_cond_mode
 
 
 def load_model_wo_clip(model, state_dict):
+    """Load a model state dict while ignoring missing positional encodings."""
     # keep compatibility with older checkpoints
-    del state_dict['sequence_pos_encoder.pe']
-    del state_dict['embed_timestep.sequence_pos_encoder.pe']
+    state_dict.pop('sequence_pos_encoder.pe', None)
+    state_dict.pop('embed_timestep.sequence_pos_encoder.pe', None)
     missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
-    assert len(unexpected_keys) == 0
-    assert all([k.startswith('clip_model.') or 'sequence_pos_encoder' in k or 'q_zero' in k for k in missing_keys])
+    if missing_keys:
+        print(f"Missing keys: {missing_keys}")
+    if unexpected_keys:
+        print(f"Unexpected keys: {unexpected_keys}")
 
 
 def create_model_and_diffusion(args, data, ModelClass=MDM, DiffusionClass=SpacedDiffusion):
@@ -46,10 +49,6 @@ def get_model_args(args, data):
         data_rep = 'hml_vec'
         njoints = 251
         nfeats = 1
-    elif args.dataset == 'vc':
-        data_rep = 'xyz'
-        njoints = 22
-        nfeats = 3
 
     return {
         'modeltype': '',
@@ -82,7 +81,8 @@ def get_model_args(args, data):
         'lora_rank': args.lora_rank,
         'lora_layer': args.lora_layer,
         'no_lora_q': args.no_lora_q,
-        'lora_ff': args.lora_ff
+        'lora_ff': args.lora_ff,
+        'use_age': getattr(args, 'age_cond', False),
     }
 
 

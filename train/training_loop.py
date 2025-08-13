@@ -2,6 +2,7 @@ import copy
 import functools
 import os
 import time
+import copy
 from types import SimpleNamespace
 import numpy as np
 
@@ -67,9 +68,9 @@ class TrainLoop:
         self.lora_finetune = args.lora_finetune
 
         self._load_and_sync_parameters()
-        
+
         if self.lora_finetune:
-            self.model.add_LoRA_adapters()
+            self.model.add_LoRA_adapters(self.args.styles)
         self.prior_data = prior_data
 
             
@@ -211,6 +212,9 @@ class TrainLoop:
                 else:
                     data_iter = iter(self.data)
 
+                single_style = len(self.args.styles) == 1
+                style_name = self.args.styles[0] if single_style else None
+
                 for i, batch in enumerate(tqdm(data_iter)):
                     if self.prior_data is not None:
                         (motion, cond), (prior_motion, prior_cond) = batch
@@ -220,8 +224,7 @@ class TrainLoop:
 
                     if not (not self.lr_anneal_steps or self.total_step() < self.lr_anneal_steps):
                         break
-                    
-                    # if len(motion) < len(prior_motion):
+
                     if prior_motion is not None and len(motion) < len(prior_motion):
                         motion = torch.cat([motion, motion[-1:].repeat(len(prior_motion)-len(motion), 1, 1)], dim=0)
 
@@ -229,26 +232,35 @@ class TrainLoop:
                         prior_motion = prior_motion[:n]
                         prior_cond['y']['text'] = prior_cond['y']['text'][:n]
                         prior_cond['y']['mask'] = prior_cond['y']['mask'][:n]
-                        
+
                     if cond and prior_motion is not None and prior_cond is not None:
-                        for c, p in zip(cond, prior_cond):
-                            c['y']['x_pr_start'] = prior_motion
-                            c['y']['x_pr_text'] = p['y']['text']
-                            c['y']['x_pr_mask'] = p['y']['mask']
-                    
+                        if single_style:
+                            cond['y']['x_pr_start'] = prior_motion
+                            cond['y']['x_pr_text'] = prior_cond['y']['text']
+                            cond['y']['x_pr_mask'] = prior_cond['y']['mask']
+                        else:
+                            for c, p in zip(cond, prior_cond):
+                                c['y']['x_pr_start'] = prior_motion
+                                c['y']['x_pr_text'] = p['y']['text']
+                                c['y']['x_pr_mask'] = p['y']['mask']
+
                     motion = motion.to(self.device)
-                    # cond['y'] = {key: val.to(self.device) if torch.is_tensor(val) else val for key, val in cond['y'].items()}
-                    for c in cond:
-                        c['y'] = {key: val.to(self.device) if torch.is_tensor(val) else val for key, val in c['y'].items()}
 
-                    # self.run_step(motion, cond)
-                    merged_cond = {'y': {}}
-                    for key in cond[0]['y']:
-                        values = [c['y'][key] for c in cond if key in c['y']]
-                        if values and isinstance(values[0], torch.Tensor):
-                            merged_cond['y'][key] = torch.stack(values)
+                    if single_style:
+                        cond['y'] = {key: val.to(self.device) if torch.is_tensor(val) else val for key, val in cond['y'].items()}
+                        self.model.set_active_lora(style_name)
+                        self.run_step(motion, cond)
+                    else:
+                        for c in cond:
+                            c['y'] = {key: val.to(self.device) if torch.is_tensor(val) else val for key, val in c['y'].items()}
 
-                    self.run_step(motion, merged_cond)
+                        merged_cond = {'y': {}}
+                        for key in cond[0]['y']:
+                            values = [c['y'][key] for c in cond if key in c['y']]
+                            if values and isinstance(values[0], torch.Tensor):
+                                merged_cond['y'][key] = torch.stack(values)
+
+                        self.run_step(motion, merged_cond)
 
                     
                     if self.total_step() % self.log_interval == 0:
@@ -438,7 +450,10 @@ class TrainLoop:
         gen_args.guidance_param = self.args.gen_guidance_param
         gen_args.motion_length = None  # length is taken from the dataset
         gen_args.input_text = "assets/example_text_prompts.txt"
-        gen_args.tokens = self.data.dataset.tokens[:len(self.data.dataset.styles)]
+        if hasattr(self.data.dataset, 'tokens') and hasattr(self.data.dataset, 'styles'):
+            gen_args.tokens = self.data.dataset.tokens[:len(self.data.dataset.styles)]
+        else:
+            gen_args.tokens = None
         gen_args.diffusion_steps = 100
         gen_args.text_prompt = gen_args.action_file = gen_args.action_name = ''
 

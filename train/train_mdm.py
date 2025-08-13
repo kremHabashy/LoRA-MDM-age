@@ -50,7 +50,8 @@ def main():
     #     prior_data = None
     if args.lora_finetune:
         print("creating style data loader...")
-        data = get_dataset_loader(name=args.dataset, batch_size=args.batch_size, num_frames=args.num_frames, styles=tuple(args.styles))
+        data = get_dataset_loader(name=args.dataset, batch_size=args.batch_size, num_frames=args.num_frames,
+                                  styles=tuple(args.styles), age_cond=args.age_cond)
 
         if args.lambda_prior_preserv > 0:
             print("creating prior data loader...", flush=True)
