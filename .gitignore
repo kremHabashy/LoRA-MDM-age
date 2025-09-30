@@ -7,6 +7,10 @@ runs/
 logs/
 dataset/HumanML3D/texts/
 
+dataset/*
+!dataset/.gitkeep
+
+save/*
 
 # big/binary artifacts
 *.npy
